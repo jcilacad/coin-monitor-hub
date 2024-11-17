@@ -1,0 +1,21 @@
+spring:
+  config:
+    import: file:env.properties
+  application:
+    name: coinmonitorhub
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+server:
+  port: 8080
+
+
+logging:
+  level:
+    com.projects.coin_monitor_hub: DEBUG
