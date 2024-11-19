@@ -15,7 +15,11 @@ spring:
 server:
   port: 8080
 
-
 logging:
   level:
     com.projects.coin_monitor_hub: DEBUG
+
+coin:
+  gecko:
+    api:
+      key: ${COIN_GECKO_API_KEY}
