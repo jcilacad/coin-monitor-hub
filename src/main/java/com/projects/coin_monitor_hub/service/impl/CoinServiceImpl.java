@@ -2,6 +2,7 @@ package com.projects.coin_monitor_hub.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.projects.coin_monitor_hub.constants.TokenConstants;
 import com.projects.coin_monitor_hub.dto.ExpectedPriceRequestDto;
 import com.projects.coin_monitor_hub.dto.TokenPriceRequestDto;
 import com.projects.coin_monitor_hub.dto.TokenPriceResponseDto;
@@ -93,29 +94,39 @@ public class CoinServiceImpl implements CoinService {
 
     private List<TokenPriceResponseDto> getDatasets() {
 
-        List<ExpectedPriceRequestDto> metaStrikeExpectedPriceRequestDto = getExpectedPriceRequestDto(
+        TokenPriceResponseDto metaStrikeTokenPriceResponseDto = getExpectedPriceRequestDto(
                 BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
                 BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
                 BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
-                BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23));
+                BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
+                TokenConstants.BINANCE_SMART_CHAIN, TokenConstants.METASTRIKE_CONTRACT_ADDRESS,
+                TokenConstants.USD, TokenConstants.METASTRIKE_TOKEN_NAME);
 
-        TokenPriceRequestDto metaStrikeTokenPriceRequestDto = TokenPriceRequestDto.builder()
-                .assetPlatformId("binance-smart-chain")
-                .tokenContractAddress("0x496cC0b4ee12Aa2AC4c42E93067484e7Ff50294b")
-                .targetCurrency("usd")
-                .tokenName("Metastrike")
-                .expectedPriceRequestDto(metaStrikeExpectedPriceRequestDto)
-                .build();
+        TokenPriceResponseDto octaviaTokenPriceResponseDto = getExpectedPriceRequestDto(
+                BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
+                BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
+                BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
+                BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
+                TokenConstants.BINANCE_SMART_CHAIN, TokenConstants.METASTRIKE_CONTRACT_ADDRESS,
+                TokenConstants.USD, TokenConstants.OCTAVIA_TOKEN_NAME);
 
-        TokenPriceResponseDto metaStrikeTokenPriceResponseDto = TokenPriceMapper.INSTANCE.tokenPriceRequestToResponse(metaStrikeTokenPriceRequestDto);
+        TokenPriceResponseDto exverseTokendPriceResponseDto = getExpectedPriceRequestDto(
+                BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
+                BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
+                BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
+                BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
+                TokenConstants.BINANCE_SMART_CHAIN, TokenConstants.EXVERSE_CONTRACT_ADDRESS,
+                TokenConstants.USD, TokenConstants.EXVERSE_TOKEN_NAME);
 
-        return List.of(metaStrikeTokenPriceResponseDto);
+        return List.of(metaStrikeTokenPriceResponseDto, octaviaTokenPriceResponseDto, exverseTokendPriceResponseDto);
     }
 
-    private List<ExpectedPriceRequestDto> getExpectedPriceRequestDto(BigDecimal lowTwentyFive, BigDecimal highTwentyFive,
+    private TokenPriceResponseDto getExpectedPriceRequestDto(BigDecimal lowTwentyFive, BigDecimal highTwentyFive,
                                                                      BigDecimal lowFifty, BigDecimal highFifty,
                                                                      BigDecimal lowSeventyFive, BigDecimal highSeventyFive,
-                                                                     BigDecimal lowOneHundred, BigDecimal highOneHundred) {
+                                                                     BigDecimal lowOneHundred, BigDecimal highOneHundred,
+                                                                     String assetPlatformId, String tokenContractAddress,
+                                                                     String targetCurrency, String tokenName) {
 
         List<ExpectedPriceRequestDto> expectedPriceRequestDtoList = Arrays.asList(
                 ExpectedPriceRequestDto.builder().lowLimitExpectedPrice(lowTwentyFive)
@@ -131,6 +142,15 @@ public class CoinServiceImpl implements CoinService {
                         .highLimitExpectedPrice(highOneHundred).percent(100).build()
         );
 
-        return expectedPriceRequestDtoList;
+        TokenPriceRequestDto tokenPriceRequestDto = TokenPriceRequestDto.builder()
+                .assetPlatformId(assetPlatformId)
+                .tokenContractAddress(tokenContractAddress)
+                .targetCurrency(targetCurrency)
+                .tokenName(tokenName)
+                .expectedPriceRequestDto(expectedPriceRequestDtoList)
+                .build();
+
+
+        return TokenPriceMapper.INSTANCE.tokenPriceRequestToResponse(tokenPriceRequestDto);
     }
 }
