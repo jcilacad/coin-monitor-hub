@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Coin Market Hub Alert</title>
+</head>
+<body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f8f9fa; color: #212529;">
+<div style="max-width: 600px; margin: 20px auto; background-color: #ffffff; border: 2px solid #ff6b6b; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); padding: 20px; text-align: center;">
+    <h1 style="font-size: 26px; color: #ff6b6b; margin-bottom: 20px;">🚨 Crypto Alert!</h1>
+    <div class="details" style="text-align: left; font-size: 16px; line-height: 1.5; color: #333;">
+        <p th:text="'Token Name: ' + ${tokenName}" style="margin: 10px 0;">Token Name: [TokenName]</p>
+        <p th:text="'Target Price: ' + ${targetPrice}" style="margin: 10px 0;">Target Price: [TargetPrice]</p>
+        <p th:text="'Percent: ' + ${percent}" style="margin: 10px 0;">Percent: [Percent]</p>
+    </div>
+</div>
+</body>
+</html>

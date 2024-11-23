@@ -8,19 +8,25 @@ import com.projects.coin_monitor_hub.dto.TokenPriceRequestDto;
 import com.projects.coin_monitor_hub.dto.TokenPriceResponseDto;
 import com.projects.coin_monitor_hub.mapper.TokenPriceMapper;
 import com.projects.coin_monitor_hub.service.CoinService;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -32,19 +38,32 @@ public class CoinServiceImpl implements CoinService {
 
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
+    private final JavaMailSender emailSender;
+    private final TemplateEngine templateEngine;
+    private final Set<String> history;
+
+    @Value("${spring.mail.username}")
+    private String gmailUsername;
 
     @Autowired
-    public CoinServiceImpl(WebClient.Builder webClientBuilder, ObjectMapper objectMapper) {
+    public CoinServiceImpl(WebClient.Builder webClientBuilder, ObjectMapper objectMapper, JavaMailSender emailSender,
+                           TemplateEngine templateEngine, Set<String> history) {
         this.webClient = webClientBuilder.baseUrl("https://api.coingecko.com").build();
         this.objectMapper = objectMapper;
+        this.emailSender = emailSender;
+        this.templateEngine = templateEngine;
+        this.history = history;
     }
 
     @Async
     @Override
 //    @Scheduled(cron = "0 */13 * * * *")
-    @Scheduled(cron = "*/1 * * * * *") // Runs every second
+//    @Scheduled(cron = "*/1 * * * * *") // Runs every second
+    @Scheduled(cron = "0 * * * * *") // Runs every 1 minute
     public void getTokenPrice() {
 
+        log.info("Hashed Date {}", DigestUtils.sha256Hex(LocalDateTime.now().toLocalDate().toString()));
+        log.info("Date {}", LocalDateTime.now().toLocalDate());
         log.info("RUNNING EVERY 1 SECOND");
         getDatasets().stream()
                 .forEach(tokenPriceResponseDto -> {
@@ -75,58 +94,99 @@ public class CoinServiceImpl implements CoinService {
 
                     List<ExpectedPriceRequestDto> priceRequestDtoList = tokenPriceResponseDto.getExpectedPriceRequestDto();
 
-                    priceRequestDtoList.stream()
-                            .forEach(expectedPriceRequestDto -> {
-                                BigDecimal lowLimitExpectedPrice = expectedPriceRequestDto.getLowLimitExpectedPrice();
-                                BigDecimal highLimitExpectedPrice = expectedPriceRequestDto.getHighLimitExpectedPrice();
+                    for (ExpectedPriceRequestDto expectedPriceRequestDto : priceRequestDtoList) {
+                        BigDecimal lowLimitExpectedPrice = expectedPriceRequestDto.getLowLimitExpectedPrice();
+                        BigDecimal highLimitExpectedPrice = expectedPriceRequestDto.getHighLimitExpectedPrice();
+                        int percent = expectedPriceRequestDto.getPercent();
 
-                                boolean isInRange = extractedPrice.compareTo(lowLimitExpectedPrice) >= 0 &&
-                                        extractedPrice.compareTo(highLimitExpectedPrice) <= 0;
+                        boolean isInRange = extractedPrice.compareTo(lowLimitExpectedPrice) >= 0 &&
+                                extractedPrice.compareTo(highLimitExpectedPrice) <= 0;
 
-                                if (isInRange) {
-                                    // TODO: Send an email and SMS
-                                    log.info("IS BETWEEN THE RANGE OF: {} - {} WITH A PERCENT OF {}", lowLimitExpectedPrice.toString(),
-                                            highLimitExpectedPrice.toString(), expectedPriceRequestDto.getPercent());
-                                }
-                            });
+                        String priceRangeUniqueId = DigestUtils.sha256Hex(LocalDateTime.now().toLocalDate()
+                                + assetPlatformId + tokenContractAddress
+                                + lowLimitExpectedPrice + highLimitExpectedPrice);
+
+                        if (isInRange && !history.contains(priceRangeUniqueId)) {
+                            // TODO: Create a function to send notification via SMS
+                            try {
+                                Currency currency = Currency.getInstance(targetCurrency.toUpperCase());
+
+                                String targetPrice = currency.getSymbol(Locale.GERMAN).concat(" ").concat(extractedPrice.toPlainString());
+                                MimeMessage mimeMessage = emailSender.createMimeMessage();
+                                MimeMessageHelper helper;
+                                Context context = new Context();
+                                Map<String, Object> variables = new HashMap<>();
+                                variables.put("targetPrice", targetPrice);
+                                variables.put("tokenName", tokenName);
+                                variables.put("percent", String.valueOf(percent));
+
+                                context.setVariables(variables);
+                                helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+                                helper.setTo(gmailUsername);
+                                helper.setSubject("Coin Market Hub Alert");
+                                String htmlContent = templateEngine.process("email-template", context);
+                                helper.setText(htmlContent, true);
+                                emailSender.send(mimeMessage);
+                            } catch (MessagingException e) {
+                                throw new RuntimeException(e);
+                            }
+
+                            log.info("IS BETWEEN THE RANGE OF: {} - {} WITH A PERCENT OF {}",
+                                    lowLimitExpectedPrice.toString(),
+                                    highLimitExpectedPrice.toString(),
+                                    expectedPriceRequestDto.getPercent());
+
+                            history.add(priceRangeUniqueId);
+                            break;
+                        }
+                    }
+
                 });
     }
 
     private List<TokenPriceResponseDto> getDatasets() {
 
         TokenPriceResponseDto metaStrikeTokenPriceResponseDto = getExpectedPriceRequestDto(
-                BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
-                BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
-                BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
-                BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
+                BigDecimal.valueOf(0.20), BigDecimal.valueOf(0.30),
+                BigDecimal.valueOf(0.31), BigDecimal.valueOf(0.40),
+                BigDecimal.valueOf(0.41), BigDecimal.valueOf(0.50),
+                BigDecimal.valueOf(0.51), BigDecimal.valueOf(0.60),
                 TokenConstants.BINANCE_SMART_CHAIN, TokenConstants.METASTRIKE_CONTRACT_ADDRESS,
                 TokenConstants.USD, TokenConstants.METASTRIKE_TOKEN_NAME);
 
         TokenPriceResponseDto octaviaTokenPriceResponseDto = getExpectedPriceRequestDto(
-                BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
-                BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
-                BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
-                BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
-                TokenConstants.BINANCE_SMART_CHAIN, TokenConstants.METASTRIKE_CONTRACT_ADDRESS,
+                BigDecimal.valueOf(0.10), BigDecimal.valueOf(0.20),
+                BigDecimal.valueOf(0.21), BigDecimal.valueOf(0.40),
+                BigDecimal.valueOf(0.41), BigDecimal.valueOf(1.00),
+                BigDecimal.valueOf(1.01), BigDecimal.valueOf(2.00),
+                TokenConstants.BINANCE_SMART_CHAIN, TokenConstants.OCTAVIA_CONTRACT_ADDRESS,
                 TokenConstants.USD, TokenConstants.OCTAVIA_TOKEN_NAME);
 
         TokenPriceResponseDto exverseTokendPriceResponseDto = getExpectedPriceRequestDto(
-                BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
-                BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
-                BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
-                BigDecimal.valueOf(0.23), BigDecimal.valueOf(0.23),
+                BigDecimal.valueOf(0.05), BigDecimal.valueOf(0.075),
+                BigDecimal.valueOf(0.076), BigDecimal.valueOf(0.10),
+                BigDecimal.valueOf(0.11), BigDecimal.valueOf(0.125),
+                BigDecimal.valueOf(0.126), BigDecimal.valueOf(0.15),
                 TokenConstants.BINANCE_SMART_CHAIN, TokenConstants.EXVERSE_CONTRACT_ADDRESS,
                 TokenConstants.USD, TokenConstants.EXVERSE_TOKEN_NAME);
 
-        return List.of(metaStrikeTokenPriceResponseDto, octaviaTokenPriceResponseDto, exverseTokendPriceResponseDto);
+        TokenPriceResponseDto andyBaseTokendPriceResponseDto = getExpectedPriceRequestDto(
+                BigDecimal.valueOf(0.04), BigDecimal.valueOf(0.050),
+                BigDecimal.valueOf(0.051), BigDecimal.valueOf(0.06),
+                BigDecimal.valueOf(0.061), BigDecimal.valueOf(0.07),
+                BigDecimal.valueOf(0.071), BigDecimal.valueOf(0.08),
+                TokenConstants.BASE, TokenConstants.ANDY_BASE_CONTRACT_ADDRESS,
+                TokenConstants.USD, TokenConstants.ANDY_BASE_TOKEN_NAME);
+
+        return List.of(metaStrikeTokenPriceResponseDto, octaviaTokenPriceResponseDto, exverseTokendPriceResponseDto, andyBaseTokendPriceResponseDto);
     }
 
     private TokenPriceResponseDto getExpectedPriceRequestDto(BigDecimal lowTwentyFive, BigDecimal highTwentyFive,
-                                                                     BigDecimal lowFifty, BigDecimal highFifty,
-                                                                     BigDecimal lowSeventyFive, BigDecimal highSeventyFive,
-                                                                     BigDecimal lowOneHundred, BigDecimal highOneHundred,
-                                                                     String assetPlatformId, String tokenContractAddress,
-                                                                     String targetCurrency, String tokenName) {
+                                                             BigDecimal lowFifty, BigDecimal highFifty,
+                                                             BigDecimal lowSeventyFive, BigDecimal highSeventyFive,
+                                                             BigDecimal lowOneHundred, BigDecimal highOneHundred,
+                                                             String assetPlatformId, String tokenContractAddress,
+                                                             String targetCurrency, String tokenName) {
 
         List<ExpectedPriceRequestDto> expectedPriceRequestDtoList = Arrays.asList(
                 ExpectedPriceRequestDto.builder().lowLimitExpectedPrice(lowTwentyFive)
@@ -149,7 +209,6 @@ public class CoinServiceImpl implements CoinService {
                 .tokenName(tokenName)
                 .expectedPriceRequestDto(expectedPriceRequestDtoList)
                 .build();
-
 
         return TokenPriceMapper.INSTANCE.tokenPriceRequestToResponse(tokenPriceRequestDto);
     }
