@@ -8,6 +8,9 @@ import com.projects.coin_monitor_hub.dto.TokenPriceRequestDto;
 import com.projects.coin_monitor_hub.dto.TokenPriceResponseDto;
 import com.projects.coin_monitor_hub.mapper.TokenPriceMapper;
 import com.projects.coin_monitor_hub.service.CoinService;
+import com.projects.coin_monitor_hub.service.SMSService;
+import com.twilio.Twilio;
+import com.twilio.rest.api.v2010.account.Message;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +39,7 @@ public class CoinServiceImpl implements CoinService {
     @Value("${coin.gecko.api.key}")
     private String coinGeckoApiKey;
 
+    private final SMSService smsService;
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
     private final JavaMailSender emailSender;
@@ -45,9 +49,19 @@ public class CoinServiceImpl implements CoinService {
     @Value("${spring.mail.username}")
     private String gmailUsername;
 
+    @Value("${personal.phone-number}")
+    private String personalPhoneNumber;
+
+    @Value("${twilio.account-sid}")
+    private String twilioAccountSid;
+
+    @Value("${twilio.auth-token}")
+    private String twilioAuthToken;
+
     @Autowired
-    public CoinServiceImpl(WebClient.Builder webClientBuilder, ObjectMapper objectMapper, JavaMailSender emailSender,
+    public CoinServiceImpl(SMSService smsService, WebClient.Builder webClientBuilder, ObjectMapper objectMapper, JavaMailSender emailSender,
                            TemplateEngine templateEngine, Set<String> history) {
+        this.smsService = smsService;
         this.webClient = webClientBuilder.baseUrl("https://api.coingecko.com").build();
         this.objectMapper = objectMapper;
         this.emailSender = emailSender;
@@ -57,14 +71,9 @@ public class CoinServiceImpl implements CoinService {
 
     @Async
     @Override
-//    @Scheduled(cron = "0 */13 * * * *")
-//    @Scheduled(cron = "*/1 * * * * *") // Runs every second
-    @Scheduled(cron = "0 * * * * *") // Runs every 1 minute
+    @Scheduled(cron = "0 */13 * * * *")
     public void getTokenPrice() {
-
-        log.info("Hashed Date {}", DigestUtils.sha256Hex(LocalDateTime.now().toLocalDate().toString()));
-        log.info("Date {}", LocalDateTime.now().toLocalDate());
-        log.info("RUNNING EVERY 1 SECOND");
+        log.debug("getTokenPrice()");
         getDatasets().stream()
                 .forEach(tokenPriceResponseDto -> {
                     String assetPlatformId = tokenPriceResponseDto.getAssetPlatformId();
@@ -107,34 +116,41 @@ public class CoinServiceImpl implements CoinService {
                                 + lowLimitExpectedPrice + highLimitExpectedPrice);
 
                         if (isInRange && !history.contains(priceRangeUniqueId)) {
-                            // TODO: Create a function to send notification via SMS
-                            try {
-                                Currency currency = Currency.getInstance(targetCurrency.toUpperCase());
+                            Currency currency = Currency.getInstance(targetCurrency.toUpperCase());
+                            String targetPrice = currency.getSymbol(Locale.GERMAN).concat(" ").concat(extractedPrice.toPlainString());
 
-                                String targetPrice = currency.getSymbol(Locale.GERMAN).concat(" ").concat(extractedPrice.toPlainString());
+                            // Send Notification via SMS
+                            String smsMessage = String.format("""
+                                    Token Alert
+                                                                        
+                                    Token Name: %s
+                                    Current Price: %s
+                                    Percent: %d
+                                    """, tokenName, targetPrice, percent);
+                            Twilio.init(twilioAccountSid, twilioAuthToken);
+                            Message twilioMessage = (Message) smsService.sendSms(personalPhoneNumber, smsMessage);
+                            log.info("Twilio Response : {}", twilioMessage.getStatus());
+
+                            // Send Notification via Email
+                            try {
                                 MimeMessage mimeMessage = emailSender.createMimeMessage();
                                 MimeMessageHelper helper;
                                 Context context = new Context();
                                 Map<String, Object> variables = new HashMap<>();
-                                variables.put("targetPrice", targetPrice);
-                                variables.put("tokenName", tokenName);
-                                variables.put("percent", String.valueOf(percent));
+                                variables.put(TokenConstants.TARGET_PRICE, targetPrice);
+                                variables.put(TokenConstants.TOKEN_NAME, tokenName);
+                                variables.put(TokenConstants.PERCENT, String.valueOf(percent));
 
                                 context.setVariables(variables);
                                 helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
                                 helper.setTo(gmailUsername);
                                 helper.setSubject("Coin Market Hub Alert");
-                                String htmlContent = templateEngine.process("email-template", context);
+                                String htmlContent = templateEngine.process(TokenConstants.EMAIL_TEMPLATE, context);
                                 helper.setText(htmlContent, true);
                                 emailSender.send(mimeMessage);
                             } catch (MessagingException e) {
                                 throw new RuntimeException(e);
                             }
-
-                            log.info("IS BETWEEN THE RANGE OF: {} - {} WITH A PERCENT OF {}",
-                                    lowLimitExpectedPrice.toString(),
-                                    highLimitExpectedPrice.toString(),
-                                    expectedPriceRequestDto.getPercent());
 
                             history.add(priceRangeUniqueId);
                             break;

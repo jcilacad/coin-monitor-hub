@@ -36,3 +36,11 @@ coin:
   gecko:
     api:
       key: ${COIN_GECKO_API_KEY}
+
+twilio:
+  account-sid: ${TWILIO_ACCOUNT_SID}
+  auth-token: ${TWILIO_AUTH_TOKEN}
+  phone-number: ${TWILIO_PHONE_NUMBER}
+
+personal:
+  phone-number: ${PERSONAL_PHONE_NUMBER}
