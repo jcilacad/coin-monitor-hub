@@ -13,7 +13,6 @@ import com.twilio.Twilio;
 import com.twilio.rest.api.v2010.account.Message;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,11 +32,7 @@ import java.util.*;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class CoinServiceImpl implements CoinService {
-
-    @Value("${coin.gecko.api.key}")
-    private String coinGeckoApiKey;
 
     private final SMSService smsService;
     private final WebClient webClient;
@@ -45,6 +40,9 @@ public class CoinServiceImpl implements CoinService {
     private final JavaMailSender emailSender;
     private final TemplateEngine templateEngine;
     private final Set<String> history;
+
+    @Value("${coin.gecko.api.key}")
+    private String coinGeckoApiKey;
 
     @Value("${spring.mail.username}")
     private String gmailUsername;
@@ -59,10 +57,9 @@ public class CoinServiceImpl implements CoinService {
     private String twilioAuthToken;
 
     @Autowired
-    public CoinServiceImpl(SMSService smsService, WebClient.Builder webClientBuilder, ObjectMapper objectMapper, JavaMailSender emailSender,
-                           TemplateEngine templateEngine, Set<String> history) {
+    public CoinServiceImpl(SMSService smsService, WebClient.Builder webClientBuilder, ObjectMapper objectMapper, JavaMailSender emailSender, TemplateEngine templateEngine, Set<String> history) {
         this.smsService = smsService;
-        this.webClient = webClientBuilder.baseUrl("https://api.coingecko.com").build();
+        this.webClient = webClientBuilder.build();
         this.objectMapper = objectMapper;
         this.emailSender = emailSender;
         this.templateEngine = templateEngine;

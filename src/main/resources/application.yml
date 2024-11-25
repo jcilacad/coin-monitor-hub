@@ -1,12 +1,8 @@
 spring:
   config:
-    import: file:env.properties
+    import: optional:file:.env[.properties]
   application:
     name: coinmonitorhub
-  datasource:
-    url: ${DATABASE_URL}
-    username: ${DATABASE_USERNAME}
-    password: ${DATABASE_PASSWORD}
   mail:
     host: smtp.gmail.com
     port: 587
