@@ -68,7 +68,8 @@ public class CoinServiceImpl implements CoinService {
 
     @Async
     @Override
-    @Scheduled(cron = "0 */13 * * * *")
+//    @Scheduled(cron = "0 */13 * * * *")
+    @Scheduled(cron = "0 * * * * *")
     public void getTokenPrice() {
         log.debug("getTokenPrice()");
         getDatasets().stream()
@@ -77,15 +78,23 @@ public class CoinServiceImpl implements CoinService {
                     String tokenContractAddress = tokenPriceResponseDto.getTokenContractAddress().toLowerCase();
                     String targetCurrency = tokenPriceResponseDto.getTargetCurrency();
                     String tokenName = tokenPriceResponseDto.getTokenName();
+
                     String rawResponse = webClient.get()
-                            .uri("/api/v3/simple/token_price/{assetPlatformId}" +
-                                            "?contract_addresses={tokenContractAddress}&vs_currencies={targetCurrency}",
-                                    assetPlatformId, tokenContractAddress, targetCurrency)
+                            .uri(uriBuilder ->
+                                    uriBuilder.path("/api/v3/simple/token_price/{assetPlatformId}")
+                                            .queryParam("contract_addresses", tokenContractAddress)
+                                            .queryParam("vs_currencies", targetCurrency).build(assetPlatformId))
                             .header("accept", "application/json")
+                            .header("User-Agent", "C")
                             .header("x-cg-demo-api-key", coinGeckoApiKey)
                             .retrieve()
+                            .onStatus(status -> status.value() == 403, clientResponse -> {
+                                log.error("Received 403 Forbidden from CoinGecko API");
+                                return clientResponse.createException();
+                            })
                             .bodyToMono(String.class)
                             .block();
+
 
                     Map<String, Map<String, BigDecimal>> response;
                     try {
@@ -160,7 +169,7 @@ public class CoinServiceImpl implements CoinService {
     private List<TokenPriceResponseDto> getDatasets() {
 
         TokenPriceResponseDto metaStrikeTokenPriceResponseDto = getExpectedPriceRequestDto(
-                BigDecimal.valueOf(0.20), BigDecimal.valueOf(0.30),
+                BigDecimal.valueOf(0.00), BigDecimal.valueOf(0.30),
                 BigDecimal.valueOf(0.31), BigDecimal.valueOf(0.40),
                 BigDecimal.valueOf(0.41), BigDecimal.valueOf(0.50),
                 BigDecimal.valueOf(0.51), BigDecimal.valueOf(0.60),
