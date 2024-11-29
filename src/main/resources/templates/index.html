@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Home Page</title>
+  <style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f9f9f9;
+        margin: 0;
+        padding: 0;
+    }
+    .container {
+        width: 80%;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        margin-top: 50px;
+    }
+    h1 {
+        color: #333;
+    }
+    p {
+        color: #555;
+        line-height: 1.6;
+    }
+    .feature {
+        margin-top: 20px;
+    }
+    .feature-title {
+        font-weight: bold;
+        color: #444;
+    }
+    .developer {
+        margin-top: 30px;
+        font-style: italic;
+        color: #777;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Personal Cryptocurrency Tracker</h1>
+  <p>
+    Welcome to the Personal Cryptocurrency Tracker! This tool fetches data from the CoinGecko API and sends alerts via mail and SMS, keeping you updated on market trends and price changes.
+  </p>
+  <div class="feature">
+    <p class="feature-title">Key Features:</p>
+    <ul>
+      <li>Fetches real-time data from CoinGecko API.</li>
+      <li>Sends notifications via email and SMS.</li>
+      <li>Allows setting percentage thresholds for token price alerts.</li>
+    </ul>
+  </div>
+  <div class="feature">
+    <p class="feature-title">How It Works:</p>
+    <p>
+      The website fetches the latest cryptocurrency data from the CoinGecko API. You can set specific percentage values based on the current token amount. Once the specified percentage change is triggered, you will receive notifications via email and SMS to stay informed. Notifications are sent every 13 minutes to ensure you stay updated on important changes.
+    </p>
+  </div>
+  <div class="developer">
+    Developed by John Christopher Ilacad
+  </div>
+</div>
+
+</body>
+</html>

@@ -68,8 +68,7 @@ public class CoinServiceImpl implements CoinService {
 
     @Async
     @Override
-//    @Scheduled(cron = "0 */13 * * * *")
-    @Scheduled(cron = "0 * * * * *")
+    @Scheduled(cron = "0 */13 * * * *")
     public void getTokenPrice() {
         log.debug("getTokenPrice()");
         getDatasets().stream()
@@ -128,7 +127,7 @@ public class CoinServiceImpl implements CoinService {
                             // Send Notification via SMS
                             String smsMessage = String.format("""
                                     Token Alert
-                                                                        
+
                                     Token Name: %s
                                     Current Price: %s
                                     Percent: %d
@@ -169,7 +168,7 @@ public class CoinServiceImpl implements CoinService {
     private List<TokenPriceResponseDto> getDatasets() {
 
         TokenPriceResponseDto metaStrikeTokenPriceResponseDto = getExpectedPriceRequestDto(
-                BigDecimal.valueOf(0.00), BigDecimal.valueOf(0.30),
+                BigDecimal.valueOf(0.21), BigDecimal.valueOf(0.30),
                 BigDecimal.valueOf(0.31), BigDecimal.valueOf(0.40),
                 BigDecimal.valueOf(0.41), BigDecimal.valueOf(0.50),
                 BigDecimal.valueOf(0.51), BigDecimal.valueOf(0.60),
