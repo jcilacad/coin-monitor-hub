@@ -16,7 +16,10 @@ spring:
           starttls:
             enable: true
           charset: UTF
-
+  datasource:
+    url: jdbc:postgresql://${DATABASE_URL}/${DATABASE_NAME}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update
