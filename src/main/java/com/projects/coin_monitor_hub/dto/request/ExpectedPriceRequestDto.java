@@ -1,4 +1,4 @@
-package com.projects.coin_monitor_hub.dto;
+package com.projects.coin_monitor_hub.dto.request;
 
 import lombok.*;
 

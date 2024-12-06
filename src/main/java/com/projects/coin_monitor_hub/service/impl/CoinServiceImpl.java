@@ -3,10 +3,14 @@ package com.projects.coin_monitor_hub.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.projects.coin_monitor_hub.constants.TokenConstants;
-import com.projects.coin_monitor_hub.dto.ExpectedPriceRequestDto;
-import com.projects.coin_monitor_hub.dto.TokenPriceRequestDto;
-import com.projects.coin_monitor_hub.dto.TokenPriceResponseDto;
+import com.projects.coin_monitor_hub.dto.request.CoinRequestDto;
+import com.projects.coin_monitor_hub.dto.request.ExpectedPriceRequestDto;
+import com.projects.coin_monitor_hub.dto.request.TokenPriceRequestDto;
+import com.projects.coin_monitor_hub.dto.response.CoinResponseDto;
+import com.projects.coin_monitor_hub.dto.response.TokenPriceResponseDto;
+import com.projects.coin_monitor_hub.mapper.CoinMapper;
 import com.projects.coin_monitor_hub.mapper.TokenPriceMapper;
+import com.projects.coin_monitor_hub.repository.CoinRepository;
 import com.projects.coin_monitor_hub.service.CoinService;
 import com.projects.coin_monitor_hub.service.SMSService;
 import com.twilio.Twilio;
@@ -29,6 +33,7 @@ import org.thymeleaf.context.Context;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -40,6 +45,7 @@ public class CoinServiceImpl implements CoinService {
     private final JavaMailSender emailSender;
     private final TemplateEngine templateEngine;
     private final Set<String> history;
+    private final CoinRepository coinRepository;
 
     @Value("${coin.gecko.api.key}")
     private String coinGeckoApiKey;
@@ -57,13 +63,15 @@ public class CoinServiceImpl implements CoinService {
     private String twilioAuthToken;
 
     @Autowired
-    public CoinServiceImpl(SMSService smsService, WebClient.Builder webClientBuilder, ObjectMapper objectMapper, JavaMailSender emailSender, TemplateEngine templateEngine, Set<String> history) {
+    public CoinServiceImpl(SMSService smsService, WebClient.Builder webClientBuilder, ObjectMapper objectMapper,
+                           JavaMailSender emailSender, TemplateEngine templateEngine, Set<String> history, CoinRepository coinRepository) {
         this.smsService = smsService;
         this.webClient = webClientBuilder.build();
         this.objectMapper = objectMapper;
         this.emailSender = emailSender;
         this.templateEngine = templateEngine;
         this.history = history;
+        this.coinRepository = coinRepository;
     }
 
     @Async
@@ -163,6 +171,34 @@ public class CoinServiceImpl implements CoinService {
                     }
 
                 });
+    }
+
+    @Override
+    public List<CoinResponseDto> getAllCoins() {
+        return coinRepository.findAll()
+                .stream()
+                .map(CoinMapper.INSTANCE::coinToCoinResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public CoinResponseDto getCoinById(Long id) {
+        return null;
+    }
+
+    @Override
+    public CoinResponseDto createCoin(CoinRequestDto coinRequestDto) {
+        return null;
+    }
+
+    @Override
+    public CoinResponseDto updateCoin(Long coinId, CoinRequestDto updatedCoinRequestDto) {
+        return null;
+    }
+
+    @Override
+    public void deleteCoin(Long coinId) {
+
     }
 
     private List<TokenPriceResponseDto> getDatasets() {
