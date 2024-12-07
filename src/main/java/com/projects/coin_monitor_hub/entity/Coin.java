@@ -21,7 +21,7 @@ public class Coin {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "coins_generator")
-    @SequenceGenerator(name = "coins_generator", sequenceName = "coins_sequence", allocationSize = 100)
+    @SequenceGenerator(name = "coins_generator", sequenceName = "coins_sequence", allocationSize = 1)
     private Long id;
 
     @Column(name = "asset_platform_id", nullable = false)
@@ -61,7 +61,7 @@ public class Coin {
     private BigDecimal highOneHundred;
 
     @CreationTimestamp
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp

@@ -8,6 +8,8 @@ import com.projects.coin_monitor_hub.dto.request.ExpectedPriceRequestDto;
 import com.projects.coin_monitor_hub.dto.request.TokenPriceRequestDto;
 import com.projects.coin_monitor_hub.dto.response.CoinResponseDto;
 import com.projects.coin_monitor_hub.dto.response.TokenPriceResponseDto;
+import com.projects.coin_monitor_hub.entity.Coin;
+import com.projects.coin_monitor_hub.exception.ResourceNotFoundException;
 import com.projects.coin_monitor_hub.mapper.CoinMapper;
 import com.projects.coin_monitor_hub.mapper.TokenPriceMapper;
 import com.projects.coin_monitor_hub.repository.CoinRepository;
@@ -175,6 +177,7 @@ public class CoinServiceImpl implements CoinService {
 
     @Override
     public List<CoinResponseDto> getAllCoins() {
+        log.debug("getAllCoins()");
         return coinRepository.findAll()
                 .stream()
                 .map(CoinMapper.INSTANCE::coinToCoinResponse)
@@ -183,22 +186,51 @@ public class CoinServiceImpl implements CoinService {
 
     @Override
     public CoinResponseDto getCoinById(Long id) {
-        return null;
+        log.debug("getCoinById({})", id);
+        Coin foundCoin = coinRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Coin", "id", id.toString()));
+        log.info("Coin retrieved with id : {}", id);
+        return CoinMapper.INSTANCE.coinToCoinResponse(foundCoin);
     }
 
     @Override
     public CoinResponseDto createCoin(CoinRequestDto coinRequestDto) {
-        return null;
+        log.debug("createCoin({})", coinRequestDto.getAssetPlatformId());
+        Coin coin = CoinMapper.INSTANCE.coinRequestToCoin(coinRequestDto);
+        Coin savedCoin = coinRepository.save(coin);
+        log.info("Coin created with id : {}", savedCoin.getId());
+        return CoinMapper.INSTANCE.coinToCoinResponse(savedCoin);
     }
 
     @Override
     public CoinResponseDto updateCoin(Long coinId, CoinRequestDto updatedCoinRequestDto) {
-        return null;
+        log.debug("updateCoin({}, {})", coinId.toString(), updatedCoinRequestDto.getAssetPlatformId());
+        Coin foundCoin = coinRepository.findById(coinId)
+                .orElseThrow(() -> new ResourceNotFoundException("Coin", "id", coinId.toString()));
+        foundCoin.setAssetPlatformId(updatedCoinRequestDto.getAssetPlatformId());
+        foundCoin.setTokenContractAddress(updatedCoinRequestDto.getTokenContractAddress());
+        foundCoin.setTargetCurrency(updatedCoinRequestDto.getTargetCurrency());
+        foundCoin.setTokenName(updatedCoinRequestDto.getTokenName());
+        foundCoin.setLowTwentyFive(updatedCoinRequestDto.getLowTwentyFive());
+        foundCoin.setHighTwentyFive(updatedCoinRequestDto.getHighTwentyFive());
+        foundCoin.setLowFifty(updatedCoinRequestDto.getLowFifty());
+        foundCoin.setHighFifty(updatedCoinRequestDto.getHighFifty());
+        foundCoin.setLowSeventyFive(updatedCoinRequestDto.getLowSeventyFive());
+        foundCoin.setHighSeventyFive(updatedCoinRequestDto.getHighSeventyFive());
+        foundCoin.setLowOneHundred(updatedCoinRequestDto.getLowOneHundred());
+        foundCoin.setHighOneHundred(updatedCoinRequestDto.getHighOneHundred());
+        Coin updatedCoin = coinRepository.save(foundCoin);
+        log.info("Coin updated with id : {}", updatedCoin.getId());
+        return CoinMapper.INSTANCE.coinToCoinResponse(updatedCoin);
     }
 
     @Override
     public void deleteCoin(Long coinId) {
-
+        log.debug("deleteCoin({})", coinId);
+        Coin foundCoin = coinRepository.findById(coinId)
+                .orElseThrow(() -> new ResourceNotFoundException("Coin", "id", coinId.toString()));
+        coinRepository.delete(foundCoin);
+        log.info("Coin deleted with id : {}", coinId);
     }
 
     private List<TokenPriceResponseDto> getDatasets() {

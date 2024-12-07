@@ -28,6 +28,4 @@ public class CoinResponseDto {
     private BigDecimal highSeventyFive;
     private BigDecimal lowOneHundred;
     private BigDecimal highOneHundred;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }
