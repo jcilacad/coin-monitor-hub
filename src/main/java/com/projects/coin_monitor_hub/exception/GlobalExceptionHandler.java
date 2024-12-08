@@ -21,4 +21,14 @@ public class GlobalExceptionHandler {
         errorDetailsResponse.setPath(webRequest.getDescription(false));
         return new ResponseEntity<>(errorDetailsResponse, HttpStatus.NOT_FOUND);
     }
+
+    @ExceptionHandler(CoinAlreadyExistsException.class)
+    public ResponseEntity<ErrorDetailsResponse> handleCoinAlreadyExistsException(CoinAlreadyExistsException coinAlreadyExistsException,
+                                                                                 WebRequest webRequest) {
+        ErrorDetailsResponse errorDetailsResponse = new ErrorDetailsResponse();
+        errorDetailsResponse.setTimestamp(LocalDateTime.now());
+        errorDetailsResponse.setMessage(coinAlreadyExistsException.getMessage());
+        errorDetailsResponse.setPath(webRequest.getDescription(false));
+        return new ResponseEntity<>(errorDetailsResponse, HttpStatus.BAD_REQUEST);
+    }
 }

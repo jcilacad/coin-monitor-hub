@@ -9,6 +9,7 @@ import com.projects.coin_monitor_hub.dto.request.TokenPriceRequestDto;
 import com.projects.coin_monitor_hub.dto.response.CoinResponseDto;
 import com.projects.coin_monitor_hub.dto.response.TokenPriceResponseDto;
 import com.projects.coin_monitor_hub.entity.Coin;
+import com.projects.coin_monitor_hub.exception.CoinAlreadyExistsException;
 import com.projects.coin_monitor_hub.exception.ResourceNotFoundException;
 import com.projects.coin_monitor_hub.mapper.CoinMapper;
 import com.projects.coin_monitor_hub.mapper.TokenPriceMapper;
@@ -196,6 +197,12 @@ public class CoinServiceImpl implements CoinService {
     @Override
     public CoinResponseDto createCoin(CoinRequestDto coinRequestDto) {
         log.debug("createCoin({})", coinRequestDto.getAssetPlatformId());
+        String tokenContractAddress = coinRequestDto.getTokenContractAddress();
+        boolean isCoinExists = coinRepository.existsByTokenContractAddress(tokenContractAddress);
+        if (isCoinExists) {
+            throw new CoinAlreadyExistsException(tokenContractAddress);
+        }
+
         Coin coin = CoinMapper.INSTANCE.coinRequestToCoin(coinRequestDto);
         Coin savedCoin = coinRepository.save(coin);
         log.info("Coin created with id : {}", savedCoin.getId());
