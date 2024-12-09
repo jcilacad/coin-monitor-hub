@@ -1,6 +1,5 @@
 package com.projects.coin_monitor_hub.dto.request;
 
-import com.projects.coin_monitor_hub.dto.request.ExpectedPriceRequestDto;
 import lombok.*;
 
 import java.util.List;
