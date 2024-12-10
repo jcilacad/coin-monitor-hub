@@ -6,7 +6,9 @@ import com.projects.coin_monitor_hub.constants.TokenConstants;
 import com.projects.coin_monitor_hub.dto.request.CoinRequestDto;
 import com.projects.coin_monitor_hub.dto.response.CoinResponseDto;
 import com.projects.coin_monitor_hub.entity.Coin;
+import com.projects.coin_monitor_hub.exception.ApiResponseParsingException;
 import com.projects.coin_monitor_hub.exception.CoinAlreadyExistsException;
+import com.projects.coin_monitor_hub.exception.EmailSendingException;
 import com.projects.coin_monitor_hub.exception.ResourceNotFoundException;
 import com.projects.coin_monitor_hub.mapper.CoinMapper;
 import com.projects.coin_monitor_hub.repository.CoinRepository;
@@ -105,8 +107,7 @@ public class CoinServiceImpl implements CoinService {
                 response = objectMapper.readValue(rawResponse, new TypeReference<>() {
                 });
             } catch (Exception e) {
-                // TODO: Create a custom exception handler
-                throw new RuntimeException("Failed to parse API response", e);
+                throw new ApiResponseParsingException(e.getMessage());
             }
 
             String tokenName = coin.getTokenName();
@@ -181,8 +182,7 @@ public class CoinServiceImpl implements CoinService {
                 helper.setText(htmlContent, true);
                 emailSender.send(mimeMessage);
             } catch (MessagingException e) {
-                // TODO: Create a custom exception handler
-                throw new RuntimeException(e);
+                throw new EmailSendingException(e.getMessage());
             }
 
             history.add(priceRangeUniqueId);
