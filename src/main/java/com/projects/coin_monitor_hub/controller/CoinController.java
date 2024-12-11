@@ -3,6 +3,7 @@ package com.projects.coin_monitor_hub.controller;
 import com.projects.coin_monitor_hub.dto.request.CoinRequestDto;
 import com.projects.coin_monitor_hub.dto.response.CoinResponseDto;
 import com.projects.coin_monitor_hub.service.CoinService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +19,7 @@ public class CoinController {
     private final CoinService coinService;
 
     @PostMapping
-    public ResponseEntity<CoinResponseDto> createCoin(@RequestBody CoinRequestDto coinRequestDto) {
+    public ResponseEntity<CoinResponseDto> createCoin(@Valid @RequestBody CoinRequestDto coinRequestDto) {
         return new ResponseEntity<>(coinService.createCoin(coinRequestDto), HttpStatus.CREATED);
     }
 
@@ -33,7 +34,7 @@ public class CoinController {
     }
 
     @PutMapping("/{coinId}")
-    public ResponseEntity<CoinResponseDto> updateCoinById(@PathVariable Long coinId,
+    public ResponseEntity<CoinResponseDto> updateCoinById(@Valid @PathVariable Long coinId,
                                                           @RequestBody CoinRequestDto updatedCoinRequestDto) {
         return ResponseEntity.ok(coinService.updateCoin(coinId, updatedCoinRequestDto));
     }
