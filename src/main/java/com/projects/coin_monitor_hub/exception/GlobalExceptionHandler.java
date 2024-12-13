@@ -14,10 +14,20 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Global exception handler for handling various exceptions thrown by the application.
+ */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    /**
+     * Handles CoinAlreadyExistsException.
+     *
+     * @param coinAlreadyExistsException the exception thrown when a coin already exists
+     * @param webRequest                 the current web request
+     * @return a ResponseEntity containing error details and HTTP status BAD_REQUEST
+     */
     @ExceptionHandler(CoinAlreadyExistsException.class)
     public ResponseEntity<ErrorDetailsResponse> handleCoinAlreadyExistsException(CoinAlreadyExistsException coinAlreadyExistsException,
                                                                                  WebRequest webRequest) {
@@ -29,6 +39,13 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorDetailsResponse, HttpStatus.BAD_REQUEST);
     }
 
+    /**
+     * Handles EmailSendingException.
+     *
+     * @param emailSendingException the exception thrown when an email fails to send
+     * @param webRequest            the current web request
+     * @return a ResponseEntity containing error details and HTTP status SERVICE_UNAVAILABLE
+     */
     @ExceptionHandler(EmailSendingException.class)
     public ResponseEntity<ErrorDetailsResponse> handleEmailSendingException(EmailSendingException emailSendingException,
                                                                             WebRequest webRequest) {
@@ -40,6 +57,13 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorDetailsResponse, HttpStatus.SERVICE_UNAVAILABLE);
     }
 
+    /**
+     * Handles ApiResponseParsingException.
+     *
+     * @param apiResponseParsingException the exception thrown when an API response fails to parse
+     * @param webRequest                  the current web request
+     * @return a ResponseEntity containing error details and HTTP status BAD_GATEWAY
+     */
     @ExceptionHandler(ApiResponseParsingException.class)
     public ResponseEntity<ErrorDetailsResponse> handleApiResponseParsingException(ApiResponseParsingException apiResponseParsingException,
                                                                                   WebRequest webRequest) {
@@ -51,6 +75,13 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorDetailsResponse, HttpStatus.BAD_GATEWAY);
     }
 
+    /**
+     * Handles ResourceNotFoundException.
+     *
+     * @param resourceNotFoundException the exception thrown when a resource is not found
+     * @param webRequest                the current web request
+     * @return a ResponseEntity containing error details and HTTP status NOT_FOUND
+     */
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorDetailsResponse> handleResourceNotFoundException(ResourceNotFoundException resourceNotFoundException,
                                                                                 WebRequest webRequest) {
@@ -62,6 +93,12 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorDetailsResponse, HttpStatus.NOT_FOUND);
     }
 
+    /**
+     * Handles MethodArgumentNotValidException.
+     *
+     * @param methodArgumentNotValidException the exception thrown when method arguments are not valid
+     * @return a ResponseEntity containing validation errors and HTTP status BAD_REQUEST
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleMethodArgumentNotValidException(MethodArgumentNotValidException methodArgumentNotValidException) {
         log.debug("handleMethodArgumentNotValidException({})", methodArgumentNotValidException.getMessage());

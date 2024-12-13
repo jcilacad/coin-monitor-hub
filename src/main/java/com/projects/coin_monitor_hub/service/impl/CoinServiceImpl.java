@@ -36,6 +36,9 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Implementation of CoinService to handle coin-related operations.
+ */
 @Slf4j
 @Service
 public class CoinServiceImpl implements CoinService {
@@ -63,6 +66,17 @@ public class CoinServiceImpl implements CoinService {
     @Value("${twilio.auth-token}")
     private String twilioAuthToken;
 
+    /**
+     * Constructor to initialize CoinServiceImpl with required dependencies.
+     *
+     * @param smsService        the SMS service for sending notifications
+     * @param webClientBuilder  the WebClient builder for making HTTP requests
+     * @param objectMapper      the object mapper for JSON processing
+     * @param emailSender       the mail sender for sending emails
+     * @param templateEngine    the template engine for email content
+     * @param history           the set to track notification history
+     * @param coinRepository    the repository for coin data
+     */
     @Autowired
     public CoinServiceImpl(SMSService smsService, WebClient.Builder webClientBuilder, ObjectMapper objectMapper,
                            JavaMailSender emailSender, TemplateEngine templateEngine, Set<String> history, CoinRepository coinRepository) {
@@ -75,6 +89,9 @@ public class CoinServiceImpl implements CoinService {
         this.coinRepository = coinRepository;
     }
 
+    /**
+     * Fetches the token price periodically as per the cron schedule.
+     */
     @Async
     @Override
     @Scheduled(cron = "0 */13 * * * *")
@@ -104,8 +121,7 @@ public class CoinServiceImpl implements CoinService {
 
             Map<String, Map<String, BigDecimal>> response;
             try {
-                response = objectMapper.readValue(rawResponse, new TypeReference<>() {
-                });
+                response = objectMapper.readValue(rawResponse, new TypeReference<>() {});
             } catch (Exception e) {
                 throw new ApiResponseParsingException(e.getMessage());
             }
@@ -139,7 +155,6 @@ public class CoinServiceImpl implements CoinService {
 
     private boolean isCoinInRange(String tokenName, String assetPlatformId, String tokenContractAddress, String targetCurrency,
                                   int percent, BigDecimal extractedPrice, BigDecimal lowLimitExpectedPrice, BigDecimal highLimitExpectedPrice) {
-
 
         boolean isInRange = extractedPrice.compareTo(lowLimitExpectedPrice) >= 0 &&
                 extractedPrice.compareTo(highLimitExpectedPrice) <= 0;
@@ -192,6 +207,11 @@ public class CoinServiceImpl implements CoinService {
         return false;
     }
 
+    /**
+     * Retrieves all coins.
+     *
+     * @return a list of CoinResponseDto representing all coins
+     */
     @Override
     public List<CoinResponseDto> getAllCoins() {
         log.debug("getAllCoins()");
@@ -201,6 +221,12 @@ public class CoinServiceImpl implements CoinService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Retrieves a coin by its ID.
+     *
+     * @param id the ID of the coin to be retrieved
+     * @return the CoinResponseDto representing the found coin
+     */
     @Override
     public CoinResponseDto getCoinById(Long id) {
         log.debug("getCoinById({})", id);
@@ -210,6 +236,12 @@ public class CoinServiceImpl implements CoinService {
         return CoinMapper.INSTANCE.coinToCoinResponse(foundCoin);
     }
 
+    /**
+     * Creates a new coin.
+     *
+     * @param coinRequestDto the CoinRequestDto containing the details of the coin to be created
+     * @return the CoinResponseDto representing the created coin
+     */
     @Override
     public CoinResponseDto createCoin(CoinRequestDto coinRequestDto) {
         log.debug("createCoin({})", coinRequestDto.getAssetPlatformId());
@@ -225,6 +257,13 @@ public class CoinServiceImpl implements CoinService {
         return CoinMapper.INSTANCE.coinToCoinResponse(savedCoin);
     }
 
+    /**
+     * Updates an existing coin by its ID.
+     *
+     * @param coinId the ID of the coin to be updated
+     * @param updatedCoinRequestDto the CoinRequestDto containing the updated details
+     * @return the CoinResponseDto representing the updated coin
+     */
     @Override
     public CoinResponseDto updateCoin(Long coinId, CoinRequestDto updatedCoinRequestDto) {
         log.debug("updateCoin({}, {})", coinId.toString(), updatedCoinRequestDto.getAssetPlatformId());
@@ -247,6 +286,11 @@ public class CoinServiceImpl implements CoinService {
         return CoinMapper.INSTANCE.coinToCoinResponse(updatedCoin);
     }
 
+    /**
+     * Deletes a coin by its ID.
+     *
+     * @param coinId the ID of the coin to be deleted
+     */
     @Override
     public void deleteCoin(Long coinId) {
         log.debug("deleteCoin({})", coinId);

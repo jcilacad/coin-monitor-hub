@@ -7,6 +7,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+/**
+ * Implementation of SMSService to handle SMS sending operations.
+ */
 @Slf4j
 @Service
 public class SMSServiceImpl implements SMSService {
@@ -14,6 +17,13 @@ public class SMSServiceImpl implements SMSService {
     @Value("${twilio.phone-number}")
     private String twilioPhoneNumber;
 
+    /**
+     * Sends an SMS message.
+     *
+     * @param toPhoneNumber the recipient's phone number
+     * @param message the content of the SMS message
+     * @return the response from the Twilio API
+     */
     @Override
     public Object sendSms(String toPhoneNumber, String message) {
         log.debug("sendSms({}, {})", toPhoneNumber, message);
@@ -22,3 +32,4 @@ public class SMSServiceImpl implements SMSService {
         return Message.creator(to, from, message).create();
     }
 }
+
