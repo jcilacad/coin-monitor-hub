@@ -17,18 +17,21 @@ spring:
             enable: true
           charset: UTF
   datasource:
-    url: jdbc:postgresql://${DATABASE_URL}/${DATABASE_NAME}
-    username: ${DATABASE_USERNAME}
-    password: ${DATABASE_PASSWORD}
+#    url: jdbc:postgresql://google/coin-market-hub-db?cloudSqlInstance=coin-market-hub:us-central1:coin-market-hub-instance&socketFactory=com.google.cloud.sql.postgres.SocketFactory
+    url: jdbc:postgresql://${INSTANCE_CONNECTION_NAME}/${DATABASE_NAME}
+    username: ${POSTGRES_SQL_USERNAME}
+    password: ${POSTGRES_SQL_PASSWORD}
+    driver-class-name: org.postgresql.Driver
   jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
   security:
     user:
       name: ${LOGIN_USERNAME}
       password: ${LOGIN_PASSWORD}
-  profiles:
-    active: mysql
 
 server:
   port: 8080
